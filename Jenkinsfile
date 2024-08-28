@@ -1,67 +1,71 @@
 pipeline {
     agent any
 
+    tools {
+        jdk 'Java 17'  // Nom de la configuration JDK que vous avez ajoutée dans Jenkins
+    }
+
     stages {
-        stage('checkout'){
-            steps {
-                checkout scm }
-        }
-        stage('git') {
+        stage('Checkout') {
             steps {
                 // Cloner le référentiel depuis votre système de contrôle de version
-                  git branch: 'main', url : 'https://github.com/Guesmiazer/pfeserre.git'
-                  }
+                checkout scm
+            }
         }
-        stage('Construction') {
+        stage('Git') {
             steps {
-                // Exécuter votre processus de construction (par exemple, Maven, Gradle, etc.)
+                // Vérifier que le référentiel est bien clonné à la branche spécifiée
+                git branch: 'main', url: 'https://github.com/Guesmiazer/pfeserre.git'
+            }
+        }
+        stage('Build') {
+            steps {
+                // Exécuter le processus de construction Maven
                 sh 'mvn clean package'
             }
         }
         stage('Tests') {
             steps {
-                // Exécuter vos tests unitaires ou tests d'intégration
+                // Exécuter les tests unitaires ou d'intégration
                 sh 'mvn test'
             }
-                  post {
-        failure {
-            script {
-                emailext(
-                    subject: "Pipeline Failed: ${currentBuild.fullDisplayName}",
-                    body: "The pipeline has failed. Please check the console output for details.",
-                    to: 'azer1.guesmi@gmail.com',
-                    attachLog: true,
-                )
+        }
+        stage('SonarQube Analysis') {
+            steps {
+                // Analyse de SonarQube
+                withSonarQubeEnv('sonarserver') {
+                    sh 'mvn sonar:sonar -Dsonar.java.binaries=target/classes'
+                }
             }
         }
-        
+        // Stage optionnel pour le déploiement
+        // stage('Deploy') {
+        //     steps {
+        //         // Déployer votre application sur un serveur ou une plateforme spécifique
+        //         sh 'mvn deploy'
+        //     }
+        // }
+    }
+    post {
         success {
             script {
                 emailext(
                     subject: "Pipeline Succeeded: ${currentBuild.fullDisplayName}",
                     body: "The pipeline has succeeded. You can view the results at ${BUILD_URL}",
                     to: 'azer1.guesmi@gmail.com',
-                    attachLog: true,
+                    attachLog: true
                 )
             }
         }
-    }       
-
-}
-
-      stage('sonarqube') {
-           steps {
-           withSonarQubeEnv('sonarserver') {
-                                     sh 'mvn sonar:sonar -Dsonar.java.binaries=target/classes'
-          }
-          }
-       }
-        
-      // stage('Déploiement') {
-      //       steps {
-      //           // Déployer votre application sur un serveur ou une plateforme spécifique
-      //           sh 'mvn deploy'
-      //       }
-      //   }
+        failure {
+            script {
+                emailext(
+                    subject: "Pipeline Failed: ${currentBuild.fullDisplayName}",
+                    body: "The pipeline has failed. Please check the console output for details.",
+                    to: 'azer1.guesmi@gmail.com',
+                    attachLog: true
+                )
+            }
+        }
     }
 }
