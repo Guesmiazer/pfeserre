@@ -48,15 +48,15 @@ pipeline {
     }       
 
 }
-//
-   //    stage('sonarqube') {
-        //   steps {
-          // withSonarQubeEnv('sonarserver') {
-            //                          sh 'mvn sonar:sonar -Dsonar.java.binaries=target/classes'
-          // }
-          // }
-      // }
-        //
+
+      stage('sonarqube') {
+           steps {
+           withSonarQubeEnv('sonarserver') {
+                                     sh 'mvn sonar:sonar -Dsonar.java.binaries=target/classes'
+          }
+          }
+       }
+        
       // stage('Déploiement') {
       //       steps {
       //           // Déployer votre application sur un serveur ou une plateforme spécifique
