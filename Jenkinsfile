@@ -2,66 +2,41 @@ pipeline {
     agent any
 
     stages {
-        stage('Checkout') {
+        stage('checkout'){
+            steps {
+                checkout scm }
+        }
+        stage('git') {
             steps {
                 // Cloner le référentiel depuis votre système de contrôle de version
-                checkout scm
-            }
+                  git branch: 'main', url : 'https://github.com/Guesmiazer/pfeserre.git'
+                  }
         }
-        stage('Git') {
+        stage('Construction') {
             steps {
-                // Vérifier que le référentiel est bien clonné à la branche spécifiée
-                git branch: 'main', url: 'https://github.com/Guesmiazer/pfeserre.git'
-            }
-        }
-        stage('Build') {
-            steps {
-                // Exécuter le processus de construction Maven
+                // Exécuter votre processus de construction (par exemple, Maven, Gradle, etc.)
                 sh 'mvn clean package'
             }
         }
         stage('Tests') {
             steps {
-                // Exécuter les tests unitaires ou d'intégration
+                // Exécuter vos tests unitaires ou tests d'intégration
                 sh 'mvn test'
             }
         }
-        stage('SonarQube Analysis') {
-            steps {
-                // Analyse de SonarQube
-                withSonarQubeEnv('sonarserver') {
-                    sh 'mvn sonar:sonar -Dsonar.java.binaries=target/classes'
-                }
-            }
-        }
-        // Stage optionnel pour le déploiement
-        // stage('Deploy') {
-        //     steps {
-        //         // Déployer votre application sur un serveur ou une plateforme spécifique
-        //         sh 'mvn deploy'
-        //     }
-        // }
-    }
-    post {
-        success {
-            script {
-                emailext(
-                    subject: "Pipeline Succeeded: ${currentBuild.fullDisplayName}",
-                    body: "The pipeline has succeeded. You can view the results at ${BUILD_URL}",
-                    to: 'azer1.guesmi@gmail.com',
-                    attachLog: true
-                )
-            }
-        }
-        failure {
-            script {
-                emailext(
-                    subject: "Pipeline Failed: ${currentBuild.fullDisplayName}",
-                    body: "The pipeline has failed. Please check the console output for details.",
-                    to: 'azer1.guesmi@gmail.com',
-                    attachLog: true
-                )
-            }
-        }
+       stage('sonarqube') {
+           steps {
+           withSonarQubeEnv('sonarserver') {
+                                      sh 'mvn sonar:sonar -Dsonar.java.binaries=target/classes'
+           }
+           }
+       }
+        //
+      // stage('Déploiement') {
+      //       steps {
+      //           // Déployer votre application sur un serveur ou une plateforme spécifique
+      //           sh 'mvn deploy'
+      //       }
+      //   }
     }
 }
